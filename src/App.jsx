@@ -199,8 +199,8 @@ function App() {
         '--screen-animation-speed': `${Math.max(2.5 - (currentClicks * 0.1), 0.8)}s`
       }}
     >
-      <div className="w-full max-w-5xl mx-auto flex flex-col h-[90vh] justify-between py-8">
-        <div className="flex flex-col items-center space-y-2 mb-8 relative">
+      <div className="w-full max-w-5xl mx-auto flex flex-col h-[90vh] justify-between py-8 relative">
+        <div className="flex flex-col items-center space-y-2 mb-8">
           <button
             onClick={toggleMute}
             className="absolute right-0 top-0 p-3 text-white/80 hover:text-white transition-colors"
@@ -234,7 +234,7 @@ function App() {
           <p className="text-white/60 text-lg">Pump carefully, bank wisely!</p>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center -mt-8">
+        <div className="flex-1 flex flex-col items-center justify-center -mt-8 mb-24">
           <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-[2fr,1fr] gap-8 items-center">
             <div className="flex flex-col space-y-6">
               <ScoreBoard
@@ -295,8 +295,8 @@ function App() {
           </div>
         </div>
 
-        <div className="space-y-2 relative z-50">
-          <div className="flex justify-center gap-4 -mt-12">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent z-50">
+          <div className="flex justify-center gap-4 max-w-5xl mx-auto">
             <button
               onClick={handleBankClicks}
               disabled={isPopped || gameOver || currentClicks === 0}
@@ -304,34 +304,26 @@ function App() {
             >
               Bank Clicks
             </button>
-            {(gameOver || isPopped) && (
-              <button
-                onClick={handleRestart}
-                className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold shadow-lg hover:bg-blue-400 transition-all hover:scale-105 active:scale-95 text-base min-w-[140px]"
-              >
-                {gameOver ? "Play Again" : "Next Round"}
-              </button>
-            )}
           </div>
-
-          {gameOver && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-              <div className="bg-slate-800/90 p-8 rounded-xl border border-white/20 shadow-2xl max-w-md w-full mx-4 transform transition-all">
-                <h2 className="text-4xl font-bold mb-4 text-white text-center">Game Over!</h2>
-                <p className="text-3xl font-medium text-white/90 text-center mb-6">Final Score: {totalBankedClicks}</p>
-                <div className="flex justify-center">
-                  <button
-                    onClick={handleRestart}
-                    className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold shadow-lg hover:bg-blue-400 transition-all hover:scale-105 active:scale-95 text-base min-w-[140px]"
-                  >
-                    Play Again
-                  </button>
-                </div>
-                <p className="text-sm text-white/60 mt-4 text-center">Thanks for playing!</p>
-              </div>
-            </div>
-          )}
         </div>
+
+        {gameOver && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-slate-800/90 p-8 rounded-xl border border-white/20 shadow-2xl max-w-md w-full mx-4 transform transition-all">
+              <h2 className="text-4xl font-bold mb-4 text-white text-center">Game Over!</h2>
+              <p className="text-3xl font-medium text-white/90 text-center mb-6">Final Score: {totalBankedClicks}</p>
+              <div className="flex justify-center">
+                <button
+                  onClick={handleRestart}
+                  className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold shadow-lg hover:bg-blue-400 transition-all hover:scale-105 active:scale-95 text-base min-w-[140px]"
+                >
+                  Play Again
+                </button>
+              </div>
+              <p className="text-sm text-white/60 mt-4 text-center">Thanks for playing!</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
