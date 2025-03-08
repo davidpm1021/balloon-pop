@@ -234,67 +234,69 @@ function App() {
           <p className="text-white/60 text-lg">Pump carefully, bank wisely!</p>
         </div>
 
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-[2fr,1fr] gap-8 items-center">
-          <div className="flex flex-col space-y-6">
-            <ScoreBoard
-              round={round}
-              currentClicks={currentClicks}
-              totalBankedClicks={totalBankedClicks}
-              maxRounds={MAX_ROUNDS}
-            />
+        <div className="flex-1 flex flex-col items-center justify-center -mt-8">
+          <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-[2fr,1fr] gap-8 items-center">
+            <div className="flex flex-col space-y-6">
+              <ScoreBoard
+                round={round}
+                currentClicks={currentClicks}
+                totalBankedClicks={totalBankedClicks}
+                maxRounds={MAX_ROUNDS}
+              />
 
-            <div className="aspect-square w-full max-w-xl mx-auto relative">
-              <div 
-                className={cn(
-                  "absolute inset-0 backdrop-blur-sm rounded-xl p-8 pb-24 flex items-start justify-center overflow-visible transition-all duration-500",
-                  {
-                    "bg-white/5": currentClicks <= 5,
-                    "bg-yellow-500/5 animate-danger-pulse": currentClicks > 5 && currentClicks <= 10,
-                    "bg-red-500/10 animate-danger-pulse": currentClicks > 10,
-                  },
-                  currentClicks > 0 ? "animate-shake" : ""
-                )}
-                style={{
-                  '--shake-intensity': currentClicks <= 5 ? currentClicks * 0.1 : Math.min(0.5 + ((currentClicks - 5) * 0.3), 6),
-                  '--animation-speed': `${Math.max(2 - (currentClicks * 0.1), 0.5)}s`,
-                  '--glow-color': currentClicks <= 5 
-                    ? 'rgba(255, 255, 255, 0.1)' 
-                    : currentClicks <= 10 
-                      ? 'rgba(234, 179, 8, 0.2)' 
-                      : 'rgba(239, 68, 68, 0.3)',
-                }}
-              >
-                <Balloon
-                  size={currentClicks}
-                  onClick={handleBalloonClick}
-                  isPopped={isPopped}
-                />
-                {!isPopped && !gameOver && (
-                  <div className={cn(
-                    "absolute top-4 right-4 px-4 py-2 backdrop-blur-sm rounded-full text-sm font-medium transition-all duration-300",
+              <div className="aspect-square w-full max-w-xl mx-auto relative">
+                <div 
+                  className={cn(
+                    "absolute inset-0 backdrop-blur-sm rounded-xl p-8 pb-24 flex items-start justify-center overflow-visible transition-all duration-500",
                     {
-                      "bg-white/10 text-white/80": currentClicks <= 5,
-                      "bg-yellow-500/20 text-yellow-300 animate-pulse": currentClicks > 5 && currentClicks <= 10,
-                      "bg-red-500/20 text-red-300 animate-bounce": currentClicks > 10
-                    }
-                  )}>
-                    Pop risk: {Math.round(calculatePopChance(currentClicks) * 100)}%
-                  </div>
-                )}
+                      "bg-white/5": currentClicks <= 5,
+                      "bg-yellow-500/5 animate-danger-pulse": currentClicks > 5 && currentClicks <= 10,
+                      "bg-red-500/10 animate-danger-pulse": currentClicks > 10,
+                    },
+                    currentClicks > 0 ? "animate-shake" : ""
+                  )}
+                  style={{
+                    '--shake-intensity': currentClicks <= 5 ? currentClicks * 0.1 : Math.min(0.5 + ((currentClicks - 5) * 0.3), 6),
+                    '--animation-speed': `${Math.max(2 - (currentClicks * 0.1), 0.5)}s`,
+                    '--glow-color': currentClicks <= 5 
+                      ? 'rgba(255, 255, 255, 0.1)' 
+                      : currentClicks <= 10 
+                        ? 'rgba(234, 179, 8, 0.2)' 
+                        : 'rgba(239, 68, 68, 0.3)',
+                  }}
+                >
+                  <Balloon
+                    size={currentClicks}
+                    onClick={handleBalloonClick}
+                    isPopped={isPopped}
+                  />
+                  {!isPopped && !gameOver && (
+                    <div className={cn(
+                      "absolute top-4 right-4 px-4 py-2 backdrop-blur-sm rounded-full text-sm font-medium transition-all duration-300",
+                      {
+                        "bg-white/10 text-white/80": currentClicks <= 5,
+                        "bg-yellow-500/20 text-yellow-300 animate-pulse": currentClicks > 5 && currentClicks <= 10,
+                        "bg-red-500/20 text-red-300 animate-bounce": currentClicks > 10
+                      }
+                    )}>
+                      Pop risk: {Math.round(calculatePopChance(currentClicks) * 100)}%
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="h-full flex items-center">
-            <LeaderBoard 
-              scores={highScores} 
-              currentScore={gameOver ? totalBankedClicks : null}
-            />
+            <div className="h-full flex items-center justify-center">
+              <LeaderBoard 
+                scores={highScores} 
+                currentScore={gameOver ? totalBankedClicks : null}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="space-y-4 mt-8">
-          <div className="flex justify-center gap-4">
+        <div className="space-y-2 relative z-50">
+          <div className="flex justify-center gap-4 -mt-12">
             <button
               onClick={handleBankClicks}
               disabled={isPopped || gameOver || currentClicks === 0}
@@ -313,10 +315,20 @@ function App() {
           </div>
 
           {gameOver && (
-            <div className="text-center p-8 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-xl">
-              <h2 className="text-3xl font-bold mb-2 text-white">Game Over!</h2>
-              <p className="text-2xl font-medium text-white/90">Final Score: {totalBankedClicks}</p>
-              <p className="text-sm text-white/60 mt-2">Thanks for playing!</p>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-slate-800/90 p-8 rounded-xl border border-white/20 shadow-2xl max-w-md w-full mx-4 transform transition-all">
+                <h2 className="text-4xl font-bold mb-4 text-white text-center">Game Over!</h2>
+                <p className="text-3xl font-medium text-white/90 text-center mb-6">Final Score: {totalBankedClicks}</p>
+                <div className="flex justify-center">
+                  <button
+                    onClick={handleRestart}
+                    className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold shadow-lg hover:bg-blue-400 transition-all hover:scale-105 active:scale-95 text-base min-w-[140px]"
+                  >
+                    Play Again
+                  </button>
+                </div>
+                <p className="text-sm text-white/60 mt-4 text-center">Thanks for playing!</p>
+              </div>
             </div>
           )}
         </div>

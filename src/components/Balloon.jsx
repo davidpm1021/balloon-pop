@@ -1,7 +1,52 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
+import { useEffect, useRef, useState } from 'react';
 
 const Balloon = ({ size = 0, onClick, isPopped = false, className }) => {
+  const [audioInitialized, setAudioInitialized] = useState(false);
+  const popSound = useRef(null);
+
+  const initializeAudio = () => {
+    if (!audioInitialized) {
+      const audio = new Audio('/pop.wav');
+      audio.muted = false;
+      audio.volume = 0.4;
+      audio.preload = 'auto';
+      
+      // Try to get audio context working
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+            popSound.current = audio;
+            setAudioInitialized(true);
+          })
+          .catch(console.error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    // Play pop sound when balloon pops
+    if (isPopped && audioInitialized && popSound.current) {
+      popSound.current.currentTime = 0;
+      popSound.current.muted = false;
+      const playPromise = popSound.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(console.error);
+      }
+    }
+  }, [isPopped, audioInitialized]);
+
+  const handleClick = () => {
+    if (!isPopped) {
+      initializeAudio();
+      onClick();
+    }
+  };
+
   return (
     <div className="relative flex items-center justify-center w-full h-full">
       <AnimatePresence mode="wait">
@@ -26,7 +71,7 @@ const Balloon = ({ size = 0, onClick, isPopped = false, className }) => {
                   ease: "easeInOut"
                 }
               }}
-              onClick={onClick}
+              onClick={handleClick}
             >
               <svg
                 viewBox="0 0 100 100"
