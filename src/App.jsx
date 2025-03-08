@@ -234,7 +234,7 @@ function App() {
           <p className="text-white/60 text-lg">Pump carefully, bank wisely!</p>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center -mt-8 mb-24">
+        <div className="flex-1 flex flex-col items-center justify-center -mt-8 mb-32">
           <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-[2fr,1fr] gap-8 items-center">
             <div className="flex flex-col space-y-6">
               <ScoreBoard
@@ -295,7 +295,7 @@ function App() {
           </div>
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent z-50">
+        <div className="fixed bottom-0 left-0 right-0 pb-8 p-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent z-50">
           <div className="flex justify-center gap-4 max-w-5xl mx-auto">
             <button
               onClick={handleBankClicks}
