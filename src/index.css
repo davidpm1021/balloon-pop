@@ -4,23 +4,25 @@
 
 @layer base {
   :root {
-    --background: theme('colors.white');
-    --foreground: theme('colors.gray.900');
-    --card: theme('colors.white');
-    --card-foreground: theme('colors.gray.900');
-    --primary: theme('colors.blue.500');
-    --primary-foreground: theme('colors.white');
-    --secondary: theme('colors.gray.100');
-    --secondary-foreground: theme('colors.gray.900');
-    --muted: theme('colors.gray.100');
-    --muted-foreground: theme('colors.gray.500');
-    --accent: theme('colors.blue.100');
-    --accent-foreground: theme('colors.blue.900');
-    --destructive: theme('colors.red.500');
-    --destructive-foreground: theme('colors.white');
-    --border: theme('colors.gray.200');
-    --input: theme('colors.gray.200');
-    --ring: theme('colors.blue.500');
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
   }
 
@@ -50,10 +52,181 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-foreground antialiased min-h-screen;
   }
 }
 
 .balloon {
   @apply transition-transform duration-300 ease-out cursor-pointer;
+}
+
+@layer utilities {
+  .drop-shadow-glow {
+    filter: drop-shadow(0 0 0.75rem rgba(255, 255, 255, 0.5));
+  }
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0);
+  }
+  25% {
+    transform: translate(calc(var(--shake-intensity, 0) * 1px), calc(var(--shake-intensity, 0) * 0.5px)) rotate(calc(var(--shake-intensity, 0) * 0.1deg));
+  }
+  50% {
+    transform: translate(calc(var(--shake-intensity, 0) * -1px), calc(var(--shake-intensity, 0) * 0.8px)) rotate(calc(var(--shake-intensity, 0) * -0.1deg));
+  }
+  75% {
+    transform: translate(calc(var(--shake-intensity, 0) * 0.5px), calc(var(--shake-intensity, 0) * -0.5px)) rotate(calc(var(--shake-intensity, 0) * 0.1deg));
+  }
+}
+
+/* Screen shake animation */
+@keyframes screen-shake {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0);
+  }
+  25% {
+    transform: translate(calc(var(--screen-shake, 0) * 1px), calc(var(--screen-shake, 0) * 0.5px)) rotate(calc(var(--screen-shake, 0) * 0.05deg));
+  }
+  50% {
+    transform: translate(calc(var(--screen-shake, 0) * -1px), calc(var(--screen-shake, 0) * 0.8px)) rotate(calc(var(--screen-shake, 0) * -0.05deg));
+  }
+  75% {
+    transform: translate(calc(var(--screen-shake, 0) * 0.5px), calc(var(--screen-shake, 0) * -0.5px)) rotate(calc(var(--screen-shake, 0) * 0.05deg));
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-shake {
+  animation: shake var(--animation-speed, 2s) ease-in-out infinite;
+}
+
+.screen-shake {
+  animation: screen-shake var(--screen-animation-speed, 2s) ease-in-out infinite;
+}
+
+/* Update existing animations with new timing */
+.animate-shake-sm {
+  --shake-intensity: 0.5;
+  animation: shake 2s ease-in-out infinite;
+}
+
+.animate-shake-md {
+  --shake-intensity: 2;
+  animation: shake 1.5s ease-in-out infinite;
+}
+
+.animate-shake-lg {
+  --shake-intensity: 4;
+  animation: shake 1s ease-in-out infinite;
+}
+
+.animate-shake-fast {
+  animation-duration: 0.8s !important;
+}
+
+/* Add a pulsing glow effect for high risk */
+@keyframes danger-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px var(--glow-color);
+    background-color: rgba(255, 255, 255, 0.05);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--glow-color);
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.02);
+  }
+}
+
+.animate-danger-pulse {
+  animation: danger-pulse 1s ease-in-out infinite;
+}
+
+/* Background animations */
+@keyframes bg-pulse-slow {
+  0%, 100% {
+    filter: saturate(100%) brightness(1);
+    background-position: 0% 50%;
+  }
+  50% {
+    filter: saturate(120%) brightness(1.05);
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes bg-pulse-fast {
+  0%, 100% {
+    filter: saturate(150%) brightness(1);
+    background-position: 0% 50%;
+  }
+  50% {
+    filter: saturate(200%) brightness(1.2);
+    background-position: 100% 50%;
+  }
+}
+
+.animate-pulse-slow {
+  animation: bg-pulse-slow 8s ease-in-out infinite;
+  background-size: 200% 200%;
+}
+
+.animate-pulse-fast {
+  animation: bg-pulse-fast 3s ease-in-out infinite;
+  background-size: 200% 200%;
+}
+
+/* Add intensity to background transitions */
+.bg-gradient-to-br {
+  background-size: 200% 200%;
+  transition: all 1s ease-in-out;
+}
+
+.bg-gradient-to-br:not(.animate-pulse-slow):not(.animate-pulse-fast) {
+  animation: gradient 12s ease infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+    filter: saturate(100%) brightness(1);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: saturate(110%) brightness(1.02);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: saturate(100%) brightness(1);
+  }
+}
+
+/* Warning flash effect */
+@keyframes warning-flash {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+.animate-warning {
+  animation: warning-flash 0.5s ease-in-out infinite;
 }

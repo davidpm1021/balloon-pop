@@ -8,23 +8,18 @@ const ScoreBoard = ({
   className,
 }) => {
   return (
-    <div className={cn("space-y-4", className)}>
-      <div className="grid grid-cols-3 gap-4">
-        <StatCard
-          title="Round"
-          value={`${round}/${maxRounds}`}
-          color="blue"
-        />
-        <StatCard
-          title="Current Clicks"
-          value={currentClicks}
-          color="green"
-        />
-        <StatCard
-          title="Total Score"
-          value={totalBankedClicks}
-          color="purple"
-        />
+    <div className="grid grid-cols-3 gap-6">
+      <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 text-center">
+        <div className="text-sm text-white/60 uppercase tracking-wider font-medium">Round</div>
+        <div className="text-3xl md:text-4xl font-bold text-white mt-2">{round}/{maxRounds}</div>
+      </div>
+      <div className="bg-emerald-500/20 backdrop-blur-sm rounded-xl p-4 text-center">
+        <div className="text-sm text-emerald-300/80 uppercase tracking-wider font-medium">Current</div>
+        <div className="text-3xl md:text-4xl font-bold text-emerald-300 mt-2">{currentClicks}</div>
+      </div>
+      <div className="bg-blue-500/20 backdrop-blur-sm rounded-xl p-4 text-center">
+        <div className="text-sm text-blue-300/80 uppercase tracking-wider font-medium">Banked</div>
+        <div className="text-3xl md:text-4xl font-bold text-blue-300 mt-2">{totalBankedClicks}</div>
       </div>
     </div>
   );
