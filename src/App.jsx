@@ -4,8 +4,6 @@ import ScoreBoard from './components/ScoreBoard';
 import LeaderBoard from './components/LeaderBoard';
 import { MarketConditions, MARKET_CONDITIONS } from './components/MarketConditions';
 import { InstructionsModal } from './components/InstructionsModal';
-import { StatsChart } from './components/StatsChart';
-import GameAnalysis from './components/GameAnalysis';
 import { cn } from './lib/utils';
 import MultiplayerGame from './components/MultiplayerGame';
 
@@ -31,9 +29,7 @@ function App() {
   const [isAudioLoading, setIsAudioLoading] = useState(true);
   const [audioError, setAudioError] = useState(false);
   const [currentMarketCondition, setCurrentMarketCondition] = useState('BULL');
-  const [gameHistory, setGameHistory] = useState([]);
   const [totalClicks, setTotalClicks] = useState(0);
-  const [showAnalysis, setShowAnalysis] = useState(false);
   const [gameMode, setGameMode] = useState('single');
   const [wsConnection, setWsConnection] = useState(null);
   const audioRef = useRef(null);
@@ -151,7 +147,6 @@ function App() {
       // Show end game UI
       requestAnimationFrame(() => {
         setShowLeaderboard(true);
-        setShowAnalysis(true);
       });
     }
   }, [gameOver, totalBankedClicks]);
@@ -172,11 +167,6 @@ function App() {
     const popChance = calculatePopChance(currentClicks);
     if (Math.random() < popChance) {
       setIsPopped(true);
-      // Record popped clicks in history
-      setGameHistory(prev => [
-        ...prev,
-        { round, bankedClicks: 0, poppedClicks: currentClicks }
-      ]);
       
       if (round < MAX_ROUNDS) {
         setTimeout(() => {
@@ -196,12 +186,6 @@ function App() {
     if (isPopped || gameOver || currentClicks === 0) return;
 
     setTotalBankedClicks(total => total + currentClicks);
-    
-    // Record banked clicks in history
-    setGameHistory(prev => [
-      ...prev,
-      { round, bankedClicks: currentClicks, poppedClicks: 0 }
-    ]);
 
     if (round < MAX_ROUNDS) {
       setCurrentClicks(0);
@@ -219,26 +203,9 @@ function App() {
     setIsPopped(false);
     setGameOver(false);
     setShowLeaderboard(false);
-    setShowAnalysis(false);
-    setGameHistory([]);
     setTotalClicks(0);
     setCurrentMarketCondition('BULL');
   }, []);
-
-  const handleCloseAnalysis = useCallback(() => {
-    // Ensure modal closes first
-    requestAnimationFrame(() => {
-      setShowAnalysis(false);
-      setShowLeaderboard(false);
-    });
-  }, []);
-
-  // Add an effect to ensure round state is consistent
-  useEffect(() => {
-    if (round > MAX_ROUNDS) {
-      setGameOver(true);
-    }
-  }, [round]);
 
   // Update connection management
   useEffect(() => {
@@ -392,9 +359,6 @@ function App() {
             </div>
 
             <div className="space-y-6">
-              {gameHistory.length > 0 && (
-                <StatsChart gameHistory={gameHistory} />
-              )}
               {showLeaderboard && (
                 <LeaderBoard scores={highScores} />
               )}
@@ -403,12 +367,29 @@ function App() {
         </div>
       </div>
 
-      {showAnalysis && (
-        <GameAnalysis 
-          gameHistory={gameHistory}
-          totalBankedClicks={totalBankedClicks}
-          onClose={handleCloseAnalysis}
-        />
+      {gameOver && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div 
+            className="absolute inset-0 bg-[#1f3b9b]/80 backdrop-blur-sm"
+            onClick={handleRestart}
+          />
+          
+          <div className="relative bg-gradient-to-br from-[#1f3b9b] to-[#275ce4] rounded-lg p-8 max-w-md w-full mx-4 shadow-2xl border border-[#f4ad00]/20 text-center">
+            <h2 className="text-3xl font-bold text-[#f4ad00] mb-4">Game Over!</h2>
+            <p className="text-2xl text-white mb-6">
+              Final Score: ${(totalBankedClicks * 100).toLocaleString()}
+            </p>
+            {highScores.indexOf(totalBankedClicks) === 0 && (
+              <p className="text-lg text-[#1db8e8] mb-6">New High Score! 🎉</p>
+            )}
+            <button
+              onClick={handleRestart}
+              className="w-full py-3 bg-[#f4ad00] hover:bg-[#1db8e8] text-white font-bold rounded-lg transition-colors duration-200"
+            >
+              Play Again
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Add mode selection buttons */}
