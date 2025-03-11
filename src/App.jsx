@@ -2,12 +2,22 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import Balloon from './components/Balloon';
 import ScoreBoard from './components/ScoreBoard';
 import LeaderBoard from './components/LeaderBoard';
+import { MarketConditions, MARKET_CONDITIONS } from './components/MarketConditions';
+import { InstructionsModal } from './components/InstructionsModal';
+import { StatsChart } from './components/StatsChart';
+import GameAnalysis from './components/GameAnalysis';
 import { cn } from './lib/utils';
+import MultiplayerGame from './components/MultiplayerGame';
 
 const MAX_ROUNDS = 5;
-const BASE_POP_CHANCE = 0.02;
-const POP_CHANCE_INCREMENT = 0.001;
+const BASE_POP_CHANCE = 0.05;
+const POP_CHANCE_INCREMENT = 0.015;
 const MAX_LEADERBOARD_ENTRIES = 5;
+
+// Update WebSocket URL configuration
+const WS_URL = process.env.NODE_ENV === 'production'
+  ? 'wss://your-render-app.onrender.com'
+  : 'ws://localhost:8080';
 
 function App() {
   const [round, setRound] = useState(1);
@@ -20,6 +30,12 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [isAudioLoading, setIsAudioLoading] = useState(true);
   const [audioError, setAudioError] = useState(false);
+  const [currentMarketCondition, setCurrentMarketCondition] = useState('BULL');
+  const [gameHistory, setGameHistory] = useState([]);
+  const [totalClicks, setTotalClicks] = useState(0);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [gameMode, setGameMode] = useState('single');
+  const [wsConnection, setWsConnection] = useState(null);
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -131,21 +147,37 @@ function App() {
       
       setHighScores(newScores);
       localStorage.setItem('balloonPopHighScores', JSON.stringify(newScores));
-      setShowLeaderboard(true);
+      
+      // Show end game UI
+      requestAnimationFrame(() => {
+        setShowLeaderboard(true);
+        setShowAnalysis(true);
+      });
     }
-  }, [gameOver, totalBankedClicks, highScores]);
+  }, [gameOver, totalBankedClicks]);
 
   const calculatePopChance = useCallback((clicks) => {
-    // Use cubic growth for even slower initial increase and steeper late game
-    return BASE_POP_CHANCE + (Math.pow(clicks, 1.5) * POP_CHANCE_INCREMENT);
-  }, []);
+    const condition = MARKET_CONDITIONS[currentMarketCondition];
+    // Exponential growth for faster risk increase
+    return condition.basePopChance + 
+      (Math.pow(clicks, 2) * condition.popChanceIncrement * condition.riskMultiplier);
+  }, [currentMarketCondition]);
 
   const handleBalloonClick = useCallback(() => {
     if (isPopped || gameOver) return;
 
+    const newTotalClicks = totalClicks + 1;
+    setTotalClicks(newTotalClicks);
+
     const popChance = calculatePopChance(currentClicks);
     if (Math.random() < popChance) {
       setIsPopped(true);
+      // Record popped clicks in history
+      setGameHistory(prev => [
+        ...prev,
+        { round, bankedClicks: 0, poppedClicks: currentClicks }
+      ]);
+      
       if (round < MAX_ROUNDS) {
         setTimeout(() => {
           setIsPopped(false);
@@ -158,13 +190,19 @@ function App() {
     } else {
       setCurrentClicks(c => c + 1);
     }
-  }, [currentClicks, isPopped, round, gameOver, calculatePopChance]);
+  }, [currentClicks, isPopped, round, gameOver, calculatePopChance, totalClicks]);
 
   const handleBankClicks = useCallback(() => {
     if (isPopped || gameOver || currentClicks === 0) return;
 
     setTotalBankedClicks(total => total + currentClicks);
     
+    // Record banked clicks in history
+    setGameHistory(prev => [
+      ...prev,
+      { round, bankedClicks: currentClicks, poppedClicks: 0 }
+    ]);
+
     if (round < MAX_ROUNDS) {
       setCurrentClicks(0);
       setRound(r => r + 1);
@@ -174,22 +212,95 @@ function App() {
   }, [currentClicks, isPopped, round, gameOver]);
 
   const handleRestart = useCallback(() => {
+    // Reset all game states immediately
     setRound(1);
     setCurrentClicks(0);
     setTotalBankedClicks(0);
     setIsPopped(false);
     setGameOver(false);
     setShowLeaderboard(false);
+    setShowAnalysis(false);
+    setGameHistory([]);
+    setTotalClicks(0);
+    setCurrentMarketCondition('BULL');
   }, []);
+
+  const handleCloseAnalysis = useCallback(() => {
+    // Ensure modal closes first
+    requestAnimationFrame(() => {
+      setShowAnalysis(false);
+      setShowLeaderboard(false);
+    });
+  }, []);
+
+  // Add an effect to ensure round state is consistent
+  useEffect(() => {
+    if (round > MAX_ROUNDS) {
+      setGameOver(true);
+    }
+  }, [round]);
+
+  // Update connection management
+  useEffect(() => {
+    if (gameMode === 'multi') {
+      console.log('Initializing WebSocket connection');
+      const ws = new WebSocket(WS_URL);
+      
+      // Add reconnection logic
+      let reconnectAttempts = 0;
+      const maxReconnectAttempts = 5;
+      let reconnectTimeout = null;
+      
+      const connect = () => {
+        ws.onopen = () => {
+          console.log('Connected to game server');
+          setWsConnection(ws);
+          reconnectAttempts = 0;
+        };
+
+        ws.onclose = (event) => {
+          console.log('WebSocket closed with code:', event.code, 'reason:', event.reason);
+          setWsConnection(null);
+          
+          if (gameMode === 'multi' && reconnectAttempts < maxReconnectAttempts) {
+            console.log(`Reconnecting... Attempt ${reconnectAttempts + 1}`);
+            reconnectAttempts++;
+            reconnectTimeout = setTimeout(connect, 1000 * Math.min(reconnectAttempts, 5));
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+        };
+      };
+
+      connect();
+      
+      return () => {
+        console.log('Cleaning up WebSocket connection');
+        if (reconnectTimeout) {
+          clearTimeout(reconnectTimeout);
+        }
+        if (ws) {
+          ws.close();
+          setWsConnection(null);
+        }
+      };
+    } else if (wsConnection) {
+      console.log('Closing WebSocket connection due to mode change');
+      wsConnection.close();
+      setWsConnection(null);
+    }
+  }, [gameMode]);
 
   return (
     <div 
       className={cn(
         "min-h-screen flex items-center justify-center p-4 transition-all duration-500",
         {
-          "bg-gradient-to-br from-slate-900 via-purple-900/90 to-slate-900": currentClicks <= 5,
-          "bg-gradient-to-br from-slate-900 via-purple-800/95 to-slate-900 animate-pulse-slow": currentClicks > 5 && currentClicks <= 10,
-          "bg-gradient-to-br from-red-900/90 via-purple-800 to-red-900/90 animate-pulse-fast": currentClicks > 10
+          "bg-gradient-to-br from-[#1db8e8] via-[#275ce4] to-[#1f3b9b]": currentClicks <= 5,
+          "bg-gradient-to-br from-[#f4ad00] via-[#1db8e8] to-[#275ce4] animate-pulse-slow": currentClicks > 5 && currentClicks <= 10,
+          "bg-gradient-to-br from-[#f4ad00] via-[#1f3b9b] to-[#1db8e8] animate-pulse-fast": currentClicks > 10
         },
         currentClicks > 5 ? "screen-shake" : ""
       )}
@@ -199,7 +310,9 @@ function App() {
         '--screen-animation-speed': `${Math.max(2.5 - (currentClicks * 0.1), 0.8)}s`
       }}
     >
-      <div className="w-full max-w-5xl mx-auto flex flex-col h-[90vh] justify-between py-8 relative">
+      <InstructionsModal />
+      
+      <div className="w-full max-w-6xl mx-auto flex flex-col h-[90vh] justify-between py-8 relative">
         <div className="flex flex-col items-center space-y-2 mb-8">
           <button
             onClick={toggleMute}
@@ -229,102 +342,104 @@ function App() {
             )}
           </button>
           <h1 className="text-4xl md:text-5xl font-bold text-center text-white drop-shadow-glow font-display tracking-tight">
-            🎈 Balloon Pop
+            🎈 Balloon Burst Blitz
           </h1>
-          <p className="text-white/60 text-lg">Pump carefully, bank wisely!</p>
+          <p className="text-white/60 text-lg">Risk it all, bank or fall!</p>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center -mt-8 mb-32">
-          <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-[2fr,1fr] gap-8 items-center">
-            <div className="flex flex-col space-y-6">
+        <div className="flex-1 flex flex-col items-center justify-center -mt-8 mb-8">
+          <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1fr,2fr,1fr] gap-8 items-start">
+            <div className="space-y-6">
+              <MarketConditions
+                currentCondition={currentMarketCondition}
+                onConditionChange={setCurrentMarketCondition}
+                totalClicks={totalClicks}
+              />
               <ScoreBoard
                 round={round}
                 currentClicks={currentClicks}
                 totalBankedClicks={totalBankedClicks}
                 maxRounds={MAX_ROUNDS}
+                riskPercentage={calculatePopChance(currentClicks) * 100}
               />
+            </div>
 
-              <div className="aspect-square w-full max-w-xl mx-auto relative">
-                <div 
-                  className={cn(
-                    "absolute inset-0 backdrop-blur-sm rounded-xl p-8 pb-24 flex items-start justify-center overflow-visible transition-all duration-500",
-                    {
-                      "bg-white/5": currentClicks <= 5,
-                      "bg-yellow-500/5 animate-danger-pulse": currentClicks > 5 && currentClicks <= 10,
-                      "bg-red-500/10 animate-danger-pulse": currentClicks > 10,
-                    },
-                    currentClicks > 0 ? "animate-shake" : ""
-                  )}
-                  style={{
-                    '--shake-intensity': currentClicks <= 5 ? currentClicks * 0.1 : Math.min(0.5 + ((currentClicks - 5) * 0.3), 6),
-                    '--animation-speed': `${Math.max(2 - (currentClicks * 0.1), 0.5)}s`,
-                    '--glow-color': currentClicks <= 5 
-                      ? 'rgba(255, 255, 255, 0.1)' 
-                      : currentClicks <= 10 
-                        ? 'rgba(234, 179, 8, 0.2)' 
-                        : 'rgba(239, 68, 68, 0.3)',
-                  }}
+            <div className="aspect-square w-full max-w-xl mx-auto relative">
+              <Balloon
+                size={currentClicks}
+                isPopped={isPopped}
+                onClick={handleBalloonClick}
+                onPop={() => setIsPopped(true)}
+              />
+              
+              {!isPopped && !gameOver && currentClicks > 0 && (
+                <button
+                  onClick={handleBankClicks}
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-3 bg-[#1db8e8] hover:bg-[#275ce4] text-white font-bold rounded-full shadow-lg transform transition-all hover:scale-105"
                 >
-                  <Balloon
-                    size={currentClicks}
-                    onClick={handleBalloonClick}
-                    isPopped={isPopped}
-                  />
-                  {!isPopped && !gameOver && (
-                    <div className={cn(
-                      "absolute top-4 right-4 px-4 py-2 backdrop-blur-sm rounded-full text-sm font-medium transition-all duration-300",
-                      {
-                        "bg-white/10 text-white/80": currentClicks <= 5,
-                        "bg-yellow-500/20 text-yellow-300 animate-pulse": currentClicks > 5 && currentClicks <= 10,
-                        "bg-red-500/20 text-red-300 animate-bounce": currentClicks > 10
-                      }
-                    )}>
-                      Pop risk: {Math.round(calculatePopChance(currentClicks) * 100)}%
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+                  Bank ${(currentClicks * 100).toLocaleString()} 
+                </button>
+              )}
 
-            <div className="h-full flex items-center justify-center">
-              <LeaderBoard 
-                scores={highScores} 
-                currentScore={gameOver ? totalBankedClicks : null}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="fixed bottom-0 left-0 right-0 pb-8 p-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent z-50">
-          <div className="flex justify-center gap-4 max-w-5xl mx-auto">
-            <button
-              onClick={handleBankClicks}
-              disabled={isPopped || gameOver || currentClicks === 0}
-              className="px-8 py-3 bg-emerald-500 text-white rounded-lg font-semibold shadow-lg hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 text-base min-w-[140px]"
-            >
-              Bank Clicks
-            </button>
-          </div>
-        </div>
-
-        {gameOver && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-slate-800/90 p-8 rounded-xl border border-white/20 shadow-2xl max-w-md w-full mx-4 transform transition-all">
-              <h2 className="text-4xl font-bold mb-4 text-white text-center">Game Over!</h2>
-              <p className="text-3xl font-medium text-white/90 text-center mb-6">Final Score: {totalBankedClicks}</p>
-              <div className="flex justify-center">
+              {(gameOver || isPopped) && (
                 <button
                   onClick={handleRestart}
-                  className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold shadow-lg hover:bg-blue-400 transition-all hover:scale-105 active:scale-95 text-base min-w-[140px]"
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-3 bg-[#1f3b9b] hover:bg-[#275ce4] text-white font-bold rounded-full shadow-lg transform transition-all hover:scale-105"
                 >
-                  Play Again
+                  {gameOver ? 'Play Again' : 'Next Round'}
                 </button>
-              </div>
-              <p className="text-sm text-white/60 mt-4 text-center">Thanks for playing!</p>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              {gameHistory.length > 0 && (
+                <StatsChart gameHistory={gameHistory} />
+              )}
+              {showLeaderboard && (
+                <LeaderBoard scores={highScores} />
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {showAnalysis && (
+        <GameAnalysis 
+          gameHistory={gameHistory}
+          totalBankedClicks={totalBankedClicks}
+          onClose={handleCloseAnalysis}
+        />
+      )}
+
+      {/* Add mode selection buttons */}
+      <div className="absolute top-4 right-4 space-x-4">
+        <button 
+          onClick={() => setGameMode('single')}
+          className={cn(
+            "px-4 py-2 rounded-lg font-bold",
+            gameMode === 'single' 
+              ? "bg-[#f4ad00] text-white" 
+              : "bg-[#1f3b9b] text-white/60 hover:text-white"
+          )}
+        >
+          Single Player
+        </button>
+        <button 
+          onClick={() => setGameMode('multi')}
+          className={cn(
+            "px-4 py-2 rounded-lg font-bold",
+            gameMode === 'multi' 
+              ? "bg-[#f4ad00] text-white" 
+              : "bg-[#1f3b9b] text-white/60 hover:text-white"
+          )}
+        >
+          Multiplayer
+        </button>
+      </div>
+
+      {gameMode === 'multi' && (
+        <MultiplayerGame connection={wsConnection} onExit={() => setGameMode('single')} />
+      )}
     </div>
   );
 }

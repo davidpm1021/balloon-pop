@@ -84,8 +84,8 @@ const Balloon = ({ size = 0, onClick, isPopped = false, className }) => {
                      C20 15 20 50 50 85 
                      C80 50 80 15 50 15 
                      Z"
-                  fill="#ff3333"
-                  stroke="#cc0000"
+                  fill="#f4ad00"
+                  stroke="#d49200"
                   strokeWidth="2"
                   className="drop-shadow-lg"
                 />
@@ -94,7 +94,7 @@ const Balloon = ({ size = 0, onClick, isPopped = false, className }) => {
                 <path
                   d="M40 25 
                      C30 30 35 45 45 50"
-                  stroke="rgba(255,255,255,0.5)"
+                  stroke="rgba(255,255,255,0.7)"
                   strokeWidth="2"
                   fill="none"
                 />
