@@ -32,8 +32,8 @@ export function InstructionsModal() {
 
       {isOpen && (
         <div className="fixed inset-0 bg-[#0b1541]/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#0b1541] rounded-xl p-6 max-w-md w-full relative border border-[#1f3b9b]/30">
-            <div className="flex justify-between items-start mb-4">
+          <div className="bg-[#0b1541] rounded-xl p-6 max-w-sm w-full relative border border-[#1f3b9b]/30">
+            <div className="flex justify-between items-start mb-2">
               <h2 className="text-2xl font-bold text-[#1db8e8]">How to Play</h2>
               <button
                 onClick={handleClose}
@@ -46,25 +46,25 @@ export function InstructionsModal() {
               </button>
             </div>
 
-            <div className="space-y-4 text-white/80">
-              <section>
-                <h3 className="text-lg font-semibold text-[#f4ad00] mb-2">🎯 Quick Rules</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Click balloon to inflate - each click worth $100</li>
-                  <li>Bank your money before the balloon pops!</li>
-                  <li>Bigger balloon = higher pop risk</li>
-                  <li>Complete 5 rounds to win</li>
-                </ul>
-              </section>
-
-              <section>
-                <h3 className="text-lg font-semibold text-[#1db8e8] mb-2">📈 Market Tips</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  <li><span className="text-[#1db8e8]">Bull</span> - Low risk</li>
-                  <li><span className="text-[#f4ad00]">Bear</span> - High risk</li>
-                  <li>Watch the risk meter!</li>
-                </ul>
-              </section>
+            <div className="space-y-2 text-white/90">
+              <ul className="space-y-2 text-lg">
+                <li className="flex items-center gap-2">
+                  <span className="text-[#f4ad00]">🎈</span>
+                  Click to inflate ($100 per click)
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-[#f4ad00]">💰</span>
+                  Bank before it pops!
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-[#f4ad00]">⚠️</span>
+                  Bigger = Riskier
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-[#f4ad00]">🎯</span>
+                  Survive 5 rounds
+                </li>
+              </ul>
 
               <button
                 onClick={handleClose}
