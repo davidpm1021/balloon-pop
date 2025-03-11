@@ -4,6 +4,7 @@ import ScoreBoard from './components/ScoreBoard';
 import LeaderBoard from './components/LeaderBoard';
 import { MarketConditions, MARKET_CONDITIONS } from './components/MarketConditions';
 import { InstructionsModal } from './components/InstructionsModal';
+import { StatsChart } from './components/StatsChart';
 import { cn } from './lib/utils';
 import MultiplayerGame from './components/MultiplayerGame';
 
@@ -33,6 +34,7 @@ function App() {
   const [gameMode, setGameMode] = useState('single');
   const [wsConnection, setWsConnection] = useState(null);
   const audioRef = useRef(null);
+  const [gameHistory, setGameHistory] = useState([]);
 
   useEffect(() => {
     // Create audio element with multiple sources for better compatibility
@@ -175,6 +177,12 @@ function App() {
     if (Math.random() < popChance) {
       setIsPopped(true);
       
+      // Record popped clicks in history
+      setGameHistory(prev => [
+        ...prev,
+        { round, bankedClicks: 0, poppedClicks: currentClicks }
+      ]);
+      
       if (round < MAX_ROUNDS) {
         setTimeout(() => {
           setIsPopped(false);
@@ -193,6 +201,12 @@ function App() {
     if (isPopped || gameOver || currentClicks === 0) return;
 
     setTotalBankedClicks(total => total + currentClicks);
+    
+    // Record banked clicks in history
+    setGameHistory(prev => [
+      ...prev,
+      { round, bankedClicks: currentClicks, poppedClicks: 0 }
+    ]);
 
     if (round < MAX_ROUNDS) {
       setCurrentClicks(0);
@@ -210,6 +224,7 @@ function App() {
     setIsPopped(false);
     setGameOver(false);
     setShowLeaderboard(false);
+    setGameHistory([]);
     setTotalClicks(0);
     setCurrentMarketCondition('BULL');
   }, []);
@@ -366,6 +381,9 @@ function App() {
             </div>
 
             <div className="space-y-6">
+              {gameHistory.length > 0 && (
+                <StatsChart gameHistory={gameHistory} />
+              )}
               {showLeaderboard && (
                 <LeaderBoard scores={highScores} />
               )}
