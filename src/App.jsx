@@ -151,6 +151,13 @@ function App() {
     }
   }, [gameOver, totalBankedClicks]);
 
+  // Add effect to ensure game over is triggered after round 5
+  useEffect(() => {
+    if (round > MAX_ROUNDS) {
+      setGameOver(true);
+    }
+  }, [round]);
+
   const calculatePopChance = useCallback((clicks) => {
     const condition = MARKET_CONDITIONS[currentMarketCondition];
     // Exponential growth for faster risk increase
